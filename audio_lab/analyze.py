@@ -45,7 +45,11 @@ def analyze(folder, model=None, device='cpu', reference=None):
     result = {'stage':'offline_human_review','ratings_applied':False,'submitted':False,'clips':{},
               'target_text':reference,'limitations':['未自动识别录音边界或音频是否完整','转写差异不是发音错误的确证','尚未加载音色相似度、音质或自然度评分模型']}
     engine = None
+    dll_handles = []
     if model:
+        if device == 'cuda':
+            from gpu_runtime import cuda_paths
+            dll_handles = cuda_paths()
         from faster_whisper import WhisperModel
         engine = WhisperModel(str(Path(model).resolve(strict=True)),device=device,
                               compute_type='int8' if device=='cpu' else 'float16',local_files_only=True)

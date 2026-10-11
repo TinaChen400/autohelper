@@ -1,0 +1,10 @@
+-r requirements.txt
+scipy>=1.10,<2
+librosa>=0.11,<0.12
+soundfile>=0.13,<0.15
+speechbrain>=1.0,<2
+torch>=2.5,<3
+torchaudio>=2.5,<3
+# Windows CUDA libraries used by CTranslate2 (ECAPA currently runs on CPU).
+nvidia-cublas-cu12
+nvidia-cudnn-cu12

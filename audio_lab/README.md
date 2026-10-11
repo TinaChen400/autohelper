@@ -1,5 +1,17 @@
 # 独立音频实验
 
+## 原视频实测（2026-10-11）
+
+已在独立环境下载并跑通 Whisper large-v3-turbo、微软 SigMOS V1、SpeechBrain ECAPA-TDNN。转写走 RTX 4080 Laptop CUDA FP16，SigMOS/ECAPA 走 CPU。额外依赖见 requirements_evaluation.txt；Windows CUDA DLL 由本进程局部加载，不更改点击环境。
+
+原录屏共约 19.46 秒，开场 Input 已显示 19/20 秒，只能提取不足 2 秒尾段；不能据此可靠投票声音相似度。切片保存在 sessions/original_video，Input 0～1.9 秒、A 1.9～9.9 秒、B 9.9～16.65 秒；以视频状态转换和音轨间隙估计，需回听核对。音轨比画面按钮转换稍晚，不直接用画面时间硬切。
+
+复测转写 A 约 0.22 秒、B 约 0.22 秒；三段转写、音质和说话人特征计算合计约 2.65 秒（不含模型加载/其他启动开销，不能推广到长音频）。首次 Whisper 推理约 21 秒、首次 SigMOS 特征处理约 18 秒，运行前必须预热。记录见 benchmark.json 及保留的历史结果。
+
+A/B 转写基本一致；dorsoventral 的分词差异不作为错读判定。SigMOS 总体参考分约 A=2.96、B=2.90，差距小，不自动决定偏好。自然度尚未实现评分。报告 report.html 可回听，analysis.json 中所有评价选项仍为空。录音、模型权重和本地报告不提交 Git。
+
+脚本：prepare_video.py 解码音轨/时间戳；benchmark_video.py 运行这份视频的固定切片试验；render_trial.py 生成带弃权说明的报告。这是一次离线试验，不是后台实时联动。
+
 点击程序保持不动。此目录不导入 workflow、vision 或任何鼠标控制代码，单独使用 `.venv`。当前是录音/诊断/可选转写原型，没有音质、说话人相似度或自然度模型评分，也不会填写或提交远程页面。
 
 ## 先验证录音
