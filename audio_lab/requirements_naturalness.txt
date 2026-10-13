@@ -1,0 +1,6 @@
+# Independent optional naturalness trial. Install only in audio_lab/.venv.
+-r requirements_evaluation.txt
+utmosv2 @ https://github.com/sarulab-speech/UTMOSv2/archive/refs/heads/main.zip
+timm==1.0.30
+transformers==5.19.0
+torchvision==0.29.1

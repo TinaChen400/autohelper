@@ -45,8 +45,8 @@ def park_pointer(hwnd, label=None, shape=None):
 
 
 def grab(hwnd):
-    if not foreground(hwnd):
-        raise RuntimeError('向日葵不在前台，已暂停。请保持被控画面可见后重新开始。')
+    if not u.IsWindow(hwnd) or u.IsIconic(hwnd):
+        raise RuntimeError('远程窗口不可见或已最小化，等待画面恢复。')
     geometry = client(hwnd)
     x, y, w, h = geometry
     # Check multiple points; a covered window must not be interpreted as the page.
@@ -128,9 +128,18 @@ class DynamicApp:
         self.root.after(100, self.drain)
 
     def refresh(self):
-        self.items = windows()
+        old_index=self.combo.current()
+        previous=self.items[old_index][0] if 0<=old_index<len(self.items) else None
+        # Older helper instances also contain “向日葵” in their titles. They
+        # must never become the remote-control target after a refresh/restart.
+        self.items = [(hwnd,title) for hwnd,title in windows()
+                      if not title.startswith(('向日葵助手','向日葵播放助手'))]
         self.combo['values'] = [f'{title} [{hwnd}]' for hwnd, title in self.items]
-        if self.items: self.combo.current(0)
+        if self.items:
+            selected=next((i for i,(hwnd,_) in enumerate(self.items) if hwnd==previous),None)
+            if selected is None:
+                selected=next((i for i,(_,title) in enumerate(self.items) if title.upper().startswith('KVM')),0)
+            self.combo.current(selected)
 
     def select_window(self):
         i = self.combo.current()
@@ -151,13 +160,13 @@ class DynamicApp:
         def work():
             try:
                 if event.is_set(): return
-                if self.detector is None:
+                if self.detector is None and not getattr(self,'defer_detector_loading',False):
                     send('status', '加载本地 OCR 模型…')
                     self.detector = Detector()
                 if not event.is_set(): action(event, send)
             except Exception as exc:
                 send('status', f'已停止：{exc}')
-        self.pool.submit(work)
+        self.task_future=self.pool.submit(work)
 
     def activate(self, hwnd):
         u.ShowWindow(hwnd, 9)
@@ -322,6 +331,9 @@ class DynamicApp:
             except queue.Empty: break
         for kind, payload in pending:
             if kind == 'status': self.status.set(payload)
+            elif kind == 'health_event':
+                handler=getattr(self,'handle_health_event',None)
+                if handler:handler(payload)
             elif kind == 'dimensions':
                 self.dimensions.set('已读取评价维度：'+'；'.join(row['name'] for row in payload) if payload else '暂未读到完整评价行。')
             else: self.render(payload)

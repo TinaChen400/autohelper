@@ -84,7 +84,7 @@ class ContinuousFlowTests(unittest.TestCase):
         class Mouse:
             def __init__(self, *args): pass
             def check(self): pass
-            def move(self, *args): pass
+            def move(self, *args, **kwargs): pass
             def wait(self, seconds): clock[0] += seconds
             def scroll(self, *args, **kwargs): scrolls.append(kwargs); clock[0] += 1
 

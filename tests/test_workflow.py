@@ -1,17 +1,27 @@
 import threading
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
+from types import SimpleNamespace
 from pathlib import Path
 import cv2
 
 from playback import parse_timer, Reading, Segment, RoundTracker, read_players
-from human_mouse import HumanMouse, Cancelled, smooth_path
-from workflow import Settings
+from human_mouse import HumanMouse, Cancelled, smooth_path, safe_click_point
+from workflow import Settings, Workflow
 from rating_reader import dimensions_from_lines
 from vision import Detector, Target
 
 
 class TimerTests(unittest.TestCase):
+    def test_first_round_requires_readable_idle_origin_before_playing(self):
+        readings={'A':Reading('idle')}
+        flow=SimpleNamespace(settings=SimpleNamespace(player_order=('A',)),
+            targets={'A':object()},snapshot=Mock(),parked=Mock(),
+            observe_players=Mock(return_value=(None,dict(readings))))
+        with self.assertRaisesRegex(RuntimeError,'开始前未读清'):
+            Workflow.prepare_first_round(flow,readings)
+        self.assertEqual(flow.observe_players.call_count,2)
+
     def test_timer_parser_rejects_incomplete_or_impossible_times(self):
         self.assertEqual(parse_timer('0:04 / 0:07'), (4, 7))
         self.assertEqual(parse_timer('O：04/O：07'), (4, 7))
@@ -109,10 +119,28 @@ class TimerTests(unittest.TestCase):
 
 
 class InputTests(unittest.TestCase):
+    def test_click_variation_covers_safe_interior_of_circle_and_rectangle(self):
+        import random,math
+        for width,height in ((30,30),(100,30)):
+            rng=random.Random(123)
+            points=[safe_click_point((10,20,width,height),rng) for _ in range(200)]
+            self.assertGreater(max(p[0] for p in points)-min(p[0] for p in points),width*.45)
+            self.assertGreater(max(p[1] for p in points)-min(p[1] for p in points),height*.45)
+            for x,y in points:
+                self.assertLess(math.hypot((x-10-width/2)/width,(y-20-height/2)/height),.5)
+
     def test_smooth_path_ends_at_target_and_eases(self):
         points = smooth_path((0,0), (100,0), 20, 5)
         self.assertEqual(points[-1], (100,0))
         self.assertLess(points[0][0], points[10][0]-points[9][0])
+
+    def test_motion_profiles_vary_without_overshooting_or_reversing(self):
+        paths=[smooth_path((0,0),(200,0),30,8,easing=e) for e in ('smooth','gentle','cosine')]
+        self.assertEqual(len({tuple(p) for p in paths}),3)
+        for path in paths:
+            self.assertEqual(path[-1],(200,0))
+            self.assertTrue(all(0<=x<=200 for x,y in path))
+            self.assertTrue(all(a[0]<=b[0] for a,b in zip(path,path[1:])))
 
     def test_cancel_stops_before_any_input(self):
         event = threading.Event(); event.set()

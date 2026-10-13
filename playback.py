@@ -5,6 +5,14 @@ import cv2
 from vision import glyph_state
 
 
+class PlaybackEvidenceError(RuntimeError):
+    """Incomplete playback can be retried, but never counted as complete."""
+
+
+class CaptureRepairPending(RuntimeError):
+    """Keep failed PCM and inspect the same task; never reset its retry budget."""
+
+
 @dataclass
 class Reading:
     state: str
@@ -15,7 +23,9 @@ class Reading:
 def parse_timer(text):
     normalized = text.replace('O', '0').replace('o', '0').replace('：', ':')
     normalized = re.sub(r'\s+', '', normalized)
-    match = re.fullmatch(r'(\d{1,2}):([0-5]\d)[/|](\d{1,2}):([0-5]\d)', normalized)
+    # Compression can make a visible colon read as a period. Retain a real
+    # separator on both sides; undelimited digits such as 003 remain invalid.
+    match = re.fullmatch(r'(\d{1,2})[:.]([0-5]\d)[/|](\d{1,2})[:.]([0-5]\d)', normalized)
     if not match: return None
     a, b, c, d = map(int, match.groups())
     current, total = a*60+b, c*60+d
@@ -30,20 +40,50 @@ def read_players(detector, image, targets):
         left = max(0, round(x+w*1.85))
         top, bottom = max(0, y), min(image.shape[0], y+h)
         timer = None
+        attempts=[]
         # Sharpened cubic scaling sometimes merges tiny digits and the slash.
         # Retry a different resampling of the same pixels before giving up.
-        for extent, interpolation in ((5.65, cv2.INTER_CUBIC), (6.1, cv2.INTER_CUBIC),
-                                      (5.65, cv2.INTER_LINEAR), (6.1, cv2.INTER_LINEAR)):
+        for extent, interpolation, scale, mode in ((5.2,cv2.INTER_NEAREST,2,'original'),
+                                      (5.65,cv2.INTER_NEAREST,2,'threshold'),
+                                      (5.65,cv2.INTER_NEAREST,2,'tight'),
+                                      (6.1, cv2.INTER_CUBIC,3,'original'),
+                                      (5.65, cv2.INTER_LINEAR,3,'original'),
+                                      (6.1, cv2.INTER_LINEAR,3,'original')):
             right = min(image.shape[1], round(x+w*extent))
             crop = image[top:bottom, left:right]
             if not crop.size: continue
-            enlarged = cv2.resize(crop, None, fx=3, fy=3, interpolation=interpolation)
+            # Remote compression fades the small colon/slash. Recover them
+            # from the actual pixels, never by inserting missing punctuation
+            # into OCR text. A tighter vertical crop is a separate fallback.
+            if mode == 'threshold':
+                gray=cv2.cvtColor(crop,cv2.COLOR_BGR2GRAY)
+                crop=cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)[1]
+            elif mode == 'tight':
+                crop=crop[round(h*.2):round(h*.8)]
+            enlarged = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=interpolation)
             rows, _ = detector.ocr(enlarged, use_det=False, use_cls=False)
+            attempts.extend(rows or [])
             for text, confidence in (rows or []):
                 if confidence >= .75:
                     timer = parse_timer(text)
                     if timer: break
             if timer: break
+        if timer is None:
+            # A moving remote timer can be slightly misaligned with the icon.
+            # Detect the text inside a wider, vertically padded timer crop;
+            # require the same strict complete timer syntax and confidence.
+            padded=image[max(0,y-h//4):min(image.shape[0],y+h+h//4),
+                         max(0,round(x+w*1.6)):min(image.shape[1],round(x+w*7))]
+            if padded.size:
+                enlarged=cv2.resize(padded,None,fx=3,fy=3,interpolation=cv2.INTER_CUBIC)
+                rows,_=detector.ocr(enlarged,use_cls=False)
+                for quad,text,confidence in rows or []:
+                    if confidence>=.75:
+                        timer=parse_timer(text)
+                        if timer:break
+        if timer is None and getattr(detector,'fast_ui_ocr',False) is True:
+            if not hasattr(detector,'timer_failures'):detector.timer_failures={}
+            detector.timer_failures[name]=attempts
         readings[name] = Reading(glyph_state(image, target.button), *(timer or (None, None)))
     return readings
 
@@ -130,7 +170,7 @@ class Segment:
             if not ended:
                 if self.idle_since is None: self.idle_since = now
                 if now-self.idle_since > 3:
-                    raise RuntimeError('音频提前停止或暂停，未判定播完；不会点击下一条。')
+                    raise PlaybackEvidenceError('音频提前停止或暂停，未判定播完；不会点击下一条。')
         if ended:
             if reading.current == 0: self.last_progress = previous_progress_at
             self.ended_samples += 1
@@ -142,7 +182,7 @@ class Segment:
         if (self.started and reading.state == 'active' and self.last_progress is not None
                 and (reading.current is not None or self.total is None or now > self.expected_end+15)
                 and now-self.last_progress > 15):
-            raise RuntimeError('播放进度超过 15 秒没有前进，已停止等待。')
+            raise PlaybackEvidenceError('播放进度超过 15 秒没有前进，已停止等待。')
 
 
 class RoundTracker:
@@ -158,7 +198,7 @@ class RoundTracker:
         for name in self.expected:
             if name not in readings: continue
             if name in active:
-                if self.segments[name].done: raise RuntimeError('已结束的片段再次开始，停止本轮。')
+                if self.segments[name].done: raise PlaybackEvidenceError('已结束的片段再次开始，停止本轮。')
                 prior = self.expected[:self.expected.index(name)]
                 for other in prior:
                     segment = self.segments[other]
@@ -174,7 +214,7 @@ class RoundTracker:
                             and readings.get(other, Reading('unknown')).state == 'idle'):
                         segment.done = True
                     if not segment.done:
-                        raise RuntimeError('自动播放跳过了尚未确认完成的片段，停止本轮。')
+                        raise PlaybackEvidenceError('自动播放跳过了尚未确认完成的片段，停止本轮。')
             self.segments[name].observe(readings[name], now)
         return all(segment.done for segment in self.segments.values())
 

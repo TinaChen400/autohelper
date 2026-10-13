@@ -8,7 +8,7 @@ import time
 import cv2
 
 from human_mouse import HumanMouse, Cancelled
-from playback import Reading, RoundTracker, read_players
+from playback import Reading, RoundTracker, read_players, PlaybackEvidenceError
 from rating_reader import read_rating_page
 from vision import stable_target, glyph_state, scene_difference, locate_players
 
@@ -19,6 +19,22 @@ class ClickRecheck(RuntimeError):
 
 class ControlChanged(RuntimeError):
     """A short-preview control changed before mouse-down."""
+
+
+class ReplayFinished(RuntimeError):
+    """Analysis finished before a supplemental mouse press."""
+
+
+class LocationUnconfirmed(RuntimeError):
+    """Read-only location may be attempted again before any playback."""
+
+
+class PlaybackDidNotStart(PlaybackEvidenceError):
+    pass
+
+
+class PageUnconfirmed(RuntimeError):
+    """One changed frame is re-observed, never used for a mouse press."""
 
 
 @dataclass
@@ -34,8 +50,11 @@ class Settings:
     short_min: float = .4
     short_max: float = 1.2
     scroll_after: bool = True
+    player_order: tuple = ('Input','A','B')
+    auto_mode: bool = False
 
     def validate(self):
+        if self.player_order not in (('Input','A','B'),('A','B')): raise ValueError('不支持的题型。')
         if not 1 <= self.replay_min <= self.replay_max <= 12: raise ValueError('重听次数需为 1～12（第一遍固定重听 Input），最小值不能超过最大值。')
         if not 0 <= self.pause_min <= self.pause_max <= 15: raise ValueError('停顿需为 0～15 秒，最小值不能超过最大值。')
         if not 1 <= self.max_scrolls <= 30: raise ValueError('最多滚动段数需为 1～30。')
@@ -52,6 +71,7 @@ class Workflow:
         self.rng = random.Random()
         self.mouse = HumanMouse(hwnd, event, self.rng)
         self.mouse.on_pause = lambda text: self.status(text)
+        self.mouse.on_interference = lambda **data:self.log('manual_input_pause',**data)
         self.directory = Path(root)/'artifacts'/('session_'+datetime.now().strftime('%Y%m%d_%H%M%S_%f'))
         self.directory.mkdir(parents=True, exist_ok=True)
         self.targets = {}
@@ -64,13 +84,17 @@ class Workflow:
 
     def log(self, kind, **data):
         with (self.directory/'events.jsonl').open('a', encoding='utf-8') as file:
-            file.write(json.dumps({'time': datetime.now().isoformat(), 'event': kind, **data}, ensure_ascii=False)+'\n')
+            file.write(json.dumps({'time': datetime.now().isoformat(), 'event': kind,
+                **({'task_id':self.task_tracking['task_id']} if getattr(self,'task_tracking',None) else {}),
+                **data}, ensure_ascii=False)+'\n')
 
     def status(self, text):
         self.send('status', text)
 
     def snapshot(self):
-        self.mouse.check()
+        if getattr(self,'observing_playback',False):
+            getattr(self.mouse,'check_observation',self.mouse.check)()
+        else:self.mouse.check()
         self.last_image = self.grab(self.hwnd)[0]
         return self.last_image
 
@@ -83,39 +107,91 @@ class Workflow:
         if target:
             x, y, w, h = target.label
             point = (min(image.shape[1]*.94, x+w+self.rng.uniform(2, 7)*target.button[2]), y+self.rng.uniform(.1, .9)*h)
-        else: point = (image.shape[1]*.72, image.shape[0]*.3)
-        self.mouse.move(point, image.shape)
-        self.mouse.wait(.5)
+        else:
+            region=self.rng.choice(((.06,.18,.20,.72),(.80,.93,.22,.70),(.30,.70,.12,.22)))
+            point=(image.shape[1]*self.rng.uniform(*region[:2]),image.shape[0]*self.rng.uniform(*region[2:]))
+        self.mouse.move(point, image.shape,slow=target is None)
+        self.mouse.wait(self.rng.uniform(.10,.18))
 
     def identify(self):
-        image, targets, issues, _ = locate_players(self.detector, self.snapshot, self.mouse, self.status)
+        began=time.monotonic()
+        order=self.settings.player_order
+        args=(self.detector, self.snapshot, self.mouse, self.status)
+        if self.settings.auto_mode and not getattr(self,'mode_detected',False):
+            image,targets,issues,_=locate_players(*args,required=None)
+            from vision import classify_task
+            detected,evidence=classify_task(targets,getattr(self.detector,'last_task_lines',[]),image.shape)
+            if detected is None:
+                raise LocationUnconfirmed('未能确认题型，没有点击。'+ '；'.join(evidence+issues))
+            self.settings.player_order=order=detected
+            self.mode_detected=True
+            self.log('task_mode_detected',player_order=list(order),evidence=evidence)
+            self.status('自动识别题型：'+('仅 A/B（无参考音频）' if len(order)==2 else 'Input/A/B（有参考音频）'))
+        else:
+            image, targets, issues, _ = locate_players(*args) if 'Input' in order else locate_players(*args,required=order)
+        targets={name:target for name,target in targets.items() if name in order}
         self.mouse.check()
         self.targets = targets
         self.locked_start = any(t.state == 'locked' for t in targets.values())
         self.preview(image, {}, '识别当前题目播放器')
-        if set(targets) != {'Input', 'A', 'B'}:
-            raise RuntimeError('本次识别未能确认全部播放器（可见不代表 OCR 已读到）。'+ '；'.join(issues))
+        if set(targets) != set(order):
+            raise LocationUnconfirmed('本次识别未能确认全部播放器（可见不代表 OCR 已读到）。'+ '；'.join(issues))
         # Static transcript strip changes on a new task, not during playback.
-        a = targets['Input'].button
+        a = targets[order[0]].button
         boundary = min(targets['A'].label[1], targets['B'].label[1])
-        left = max(0, targets['Input'].label[0]-a[2])
+        left = max(0, targets[order[0]].label[0]-a[2])
         bottom = boundary-4
-        top = a[1]+a[3]+3
+        top = a[1]+a[3]+3 if 'Input' in order else max(0,bottom-round(image.shape[0]*.23))
         self.identity = (left, top, image.shape[1]-left, bottom-top) if bottom-top > 8 else None
         self.reference = image.copy()
         cv2.imwrite(str(self.directory/'initial.png'), image)
         readings = read_players(self.detector, image, targets)
         self.known_readings = readings.copy()
         self.log('player_durations', readings={n: asdict(r) for n, r in readings.items()})
+        self.log('player_location_timing',seconds=round(time.monotonic()-began,3),
+                 attempts=getattr(self.detector,'last_search_profile',[]))
         return image, readings
 
     def check_page(self, image):
         if image.shape != self.reference.shape: raise RuntimeError('页面尺寸变化，停止本题。')
-        boxes = [target.label for name,target in self.targets.items() if not self.locked_start or name == 'Input']
+        boxes = [target.label for name,target in self.targets.items() if not self.locked_start or name == self.settings.player_order[0]]
         if self.identity: boxes.append(self.identity)
-        for x, y, w, h in boxes:
-            if scene_difference(self.reference[y:y+h, x:x+w], image[y:y+h, x:x+w]) > 9:
-                raise RuntimeError('题目内容或布局变化，已停止；不会继承上一题进度。')
+        def matches(dx,dy):
+            for x,y,w,h in boxes:
+                if x+dx<0 or y+dy<0 or x+w+dx>image.shape[1] or y+h+dy>image.shape[0]:return False
+                if scene_difference(self.reference[y:y+h,x:x+w],image[y+dy:y+h+dy,x+dx:x+w+dx])>9:return False
+            return True
+        if matches(0,0):return
+        # Remote/browser scroll settling can move every static label and the
+        # transcript by one pixel. Require one common offset for all regions,
+        # against the original reference (no accumulated drift). A real scroll
+        # or changed transcript must still fail before any click.
+        if any(matches(dx,dy) for dy in (-1,0,1) for dx in (-1,0,1) if dx or dy):return
+        raise PageUnconfirmed('题目内容或布局变化，已停止；不会继承上一题进度。')
+
+    def page_snapshot(self):
+        for attempt in range(4):
+            image=self.snapshot()
+            try:
+                self.check_page(image)
+                return image
+            except PageUnconfirmed:
+                if attempt==3:raise
+                self.log('page_observation_retry',attempt=attempt+1)
+                self.status('画面暂未核对清楚，等待短暂遮挡消失后重新观察；暂不点击。')
+                # Keep sampling read-only during playback. Waiting for the
+                # pointer to settle here would lose audio transitions again.
+                wait=getattr(self.mouse,'wait_observation',self.mouse.wait) if getattr(self,'observing_playback',False) else self.mouse.wait
+                wait(.15)
+
+    def observe_players(self):
+        """Refresh verified player pixels without re-OCRing the whole page."""
+        from dataclasses import replace
+        image=self.page_snapshot()
+        readings=read_players(self.detector,image,self.targets)
+        self.targets={name:replace(target,state=readings[name].state) for name,target in self.targets.items()}
+        self.known_readings.update({n:r for n,r in readings.items() if r.total is not None})
+        return image,readings
 
     def click(self, name, fast=False):
         for attempt in range(3):
@@ -132,6 +208,8 @@ class Workflow:
                 self.mouse.wait(.35)
 
     def _click_once(self, name, fast=False):
+        if getattr(self, 'supplemental', False) and self.stop_replays():
+            raise ReplayFinished()
         if self.targets[name].state == 'locked':
             raise RuntimeError(f'{name} 尚未解锁，不点击灰色按钮。')
         self.status(f'准备自然点击 {name}，正在重新核对标签、状态和时间。')
@@ -160,6 +238,8 @@ class Workflow:
         if scene_difference(image, fresh) > 2 or glyph_state(fresh, target.button) != 'idle':
             raise RuntimeError('移动鼠标期间页面变化，没有点击。')
         def before_press():
+            if getattr(self, 'supplemental', False) and self.stop_replays():
+                raise ReplayFinished()
             latest = self.snapshot()
             self.check_page(latest)
             if scene_difference(fresh, latest) > 2:
@@ -175,23 +255,39 @@ class Workflow:
                              and (now_reading.current, now_reading.total) != (before.current, before.total))
             known = self.known_readings.get(name)
             duration_known = before.total is not None or (known is not None and known.total is not None)
+            if (not getattr(self,'supplemental',False)
+                    and (before.total is None or before.current not in (0,before.total))):
+                raise ClickRecheck('首轮起点未确认，未按下播放按钮。')
             if now_reading.state == 'active' or timer_changed or not duration_known:
                 raise ClickRecheck(f'目标按下前核对：before={asdict(before)}; now={asdict(now_reading)}; duration_known={duration_known}')
         self.mouse.click_box(target.button, fresh.shape, before_press=before_press)
-        self.log('play_click', target=name)
+        self.log('play_click', target=name,click=getattr(self.mouse,'last_click',None))
         self.parked(fresh, target)
 
     def await_chain(self, expected, initial=None):
-        tracker = RoundTracker(expected, self.known_readings)
+        previous=getattr(self,'observing_playback',False)
+        self.observing_playback=True
+        try:return self._await_chain(expected,initial)
+        finally:self.observing_playback=previous
+
+    def _await_chain(self, expected, initial=None):
+        tracker = getattr(self, 'tracker_type', RoundTracker)(expected, self.known_readings)
         started = time.monotonic()
         readings = initial
         observed = {}
         guide_at = 0
         missing_since = {name: None for name in expected}
+        unclear_since={name:None for name in expected}
         while True:
-            image = self.snapshot()
-            self.check_page(image)
-            if readings is None: readings = read_players(self.detector, image, self.targets)
+            if getattr(self,'supplemental',False) and self.stop_replays():
+                self.status('模型结果已就绪，核对并暂停补听，准备填写评价。')
+                self.quiet_players()
+                self.log('replay_interrupted_by_model',expected=list(expected))
+                return
+            image = self.page_snapshot()
+            # A caller's initial readings belong to its older screenshot. Never
+            # attach them to this newly captured frame or recording timestamp.
+            readings = read_players(self.detector, image, self.targets)
             now = time.monotonic()
             self.last_readings = {name: asdict(reading) for name, reading in readings.items()}
             self.log('playback_sample', expected=list(expected), elapsed=round(now-started, 3), readings=self.last_readings)
@@ -203,8 +299,24 @@ class Workflow:
                 else:
                     if missing_since[name] is None: missing_since[name] = now
                     if tracker.segments[name].started and tracker.segments[name].total is None and now-missing_since[name] > 12:
-                        raise RuntimeError(f'{name} 从未读到总时长，无法建立计时；停止本轮。')
+                        raise PlaybackEvidenceError(f'{name} 连续 12 秒未读清总时长，无法建立计时。')
+                segment=tracker.segments.get(name)
+                unclear=bool(segment and segment.started and not segment.done and (reading.state=='unknown' or reading.current is None or reading.total is None))
+                if unclear:
+                    if unclear_since[name] is None:
+                        unclear_since[name]=now
+                        self.log('playback_reading_unclear',target=name)
+                    if now-unclear_since[name]>=12:
+                        raise PlaybackEvidenceError(f'{name} 连续 12 秒未看清播放图标或计时，重新核对完整首轮。')
+                elif unclear_since[name] is not None:
+                    self.log('playback_reading_recovered',target=name,seconds=round(now-unclear_since[name],3))
+                    unclear_since[name]=None
             finished = tracker.observe(readings, now)
+            guidance=getattr(self,'playback_guidance',None)
+            if guidance:guidance(image,readings,now)
+            if (getattr(self,'pending_play_start',None)==expected[0]
+                    and not tracker.segments[expected[0]].started and now-started>=4):
+                raise PlaybackDidNotStart(f'{expected[0]} 点击后 4 秒仍未确认开始播放。')
             for name, segment in tracker.segments.items():
                 state = (segment.started, segment.done)
                 if observed.get(name) != state:
@@ -212,13 +324,14 @@ class Workflow:
                     observed[name] = state
             message = tracker.summary(readings)
             self.preview(image, readings, message)
-            self.status(message+'；移动鼠标或按 Esc 可停止。')
+            self.status(message+('；人工操作时继续观察，Esc 停止。' if getattr(self,'observation_only_playback',False) else '；移动鼠标或按 Esc 可停止。'))
             if finished:
                 self.log('chain_completed', expected=list(expected))
                 cv2.imwrite(str(self.directory/f'chain_end_{time.time_ns()}.png'), image)
                 return
             active = next((r for r in readings.values() if r.state == 'active'), None)
-            if active and self.identity and now-guide_at >= 5:
+            if (active and self.identity and now-guide_at >= 5
+                    and not getattr(self,'observation_only_playback',False)):
                 x, y, w, h = self.identity
                 # Approximate visual reading guidance; no word-level alignment.
                 # Keep the cursor in transcript text, away from player controls.
@@ -229,26 +342,37 @@ class Workflow:
                     fraction = (progress*rows) % 1
                     right = min(x+w, image.shape[1]*.85)
                     point = (x+max(1, right-x)*(.08+.8*fraction), y+min(h-4, 8+row*24))
-                    self.mouse.move(point, image.shape, slow=True)
+                    self.mouse.move(point, image.shape, slow=not getattr(self,'fast_navigation',False),
+                                    quick=getattr(self,'fast_navigation',False))
                 guide_at = now
             # Autoplay may have an arbitrary gap. Keep observing instead of
             # timing out the round merely because the next item has not begun.
-            self.mouse.wait(.35)
+            # One-second clips need several actual samples, including their
+            # autoplay transition. Keep full recording checks unchanged.
+            short_transition=any(r.state=='active' and r.total is not None
+                and (r.total<=2 or (r.current is not None and r.total-r.current<=1))
+                for r in readings.values())
+            getattr(self.mouse,'wait_observation',self.mouse.wait)(.08 if short_transition else .35)
             readings = None
 
     def settle_and_follow(self, selected):
         # A replay may or may not retain autoplay. Observe rather than assume.
         self.await_chain((selected,))
+        if getattr(self,'supplemental',False) and self.stop_replays(): return
         deadline = time.monotonic()+3
         while time.monotonic() < deadline:
+            if getattr(self,'supplemental',False) and self.stop_replays():
+                self.quiet_players()
+                return
             image = self.snapshot(); self.check_page(image)
             readings = read_players(self.detector, image, self.targets)
             active = [name for name, reading in readings.items() if reading.state == 'active']
             if active:
-                order = ('Input', 'A', 'B')
+                order = self.settings.player_order
                 index = order.index(active[0])
                 self.status('重听触发了后续自动播放，等待其结束。')
                 self.await_chain(order[index:], readings)
+                if getattr(self,'supplemental',False) and self.stop_replays(): return
                 deadline = time.monotonic()+3
             self.mouse.wait(.35)
 
@@ -276,11 +400,21 @@ class Workflow:
         (self.directory/'dimensions.json').write_text(json.dumps(list(found.values()), ensure_ascii=False, indent=2), encoding='utf-8')
 
     def preview_control(self, name, box, expected, reset=False):
+        if expected=='idle' and getattr(self,'supplemental',False) and self.stop_replays(): raise ReplayFinished()
         image = self.snapshot(); self.check_page(image)
         target = self.targets[name]
         if glyph_state(image, target.button) != expected:
             raise ControlChanged('播放器状态已变化，重新观察而不点击。')
+        if expected=='active':
+            # Read the timer while the pointer is clear. OCR underneath the
+            # pointer in before_press used slow fallback retries and could let
+            # a short clip finish before the pause was actually pressed.
+            reading=read_players(self.detector,image,{name:target})[name]
+            margin=1 if getattr(self,'supplemental',False) and self.stop_replays() else 0
+            if reading.current is not None and reading.total is not None and reading.total-reading.current<=margin:
+                raise ControlChanged('已接近自然结束，观察下一段，不切换停止按钮。')
         def before():
+            if expected=='idle' and getattr(self,'supplemental',False) and self.stop_replays(): raise ReplayFinished()
             latest = self.snapshot(); self.check_page(latest)
             state = glyph_state(latest, target.button)
             if state not in (expected, 'unknown'):
@@ -293,10 +427,6 @@ class Workflow:
                 # the clear frame; the rest of the unchanged page is checked.
                 if reset_control(image, target) != box:
                     raise ControlChanged('重置图标对应变化。')
-            elif expected == 'active':
-                reading = read_players(self.detector, latest, {name:target})[name]
-                if reading.current is not None and reading.current == reading.total:
-                    raise ControlChanged('已接近自然结束，观察下一段，不切换停止按钮。')
         self.mouse.click_box(box, image.shape, before_press=before, quick=True)
         clicked = time.monotonic()
         self.mouse.move((target.button[0]+target.button[2]*3,
@@ -336,13 +466,22 @@ class Workflow:
         raise RuntimeError('移开鼠标复查后仍未确认全部暂停，未切换下一段；详情见 short_pause_check 日志。')
 
     def opening_previews(self):
+        previous=getattr(self,'supplemental',False)
+        self.supplemental=True
+        try:
+            if not self.stop_replays(): self._opening_previews()
+        finally:
+            self.supplemental=previous
+
+    def _opening_previews(self):
         from short_listen import choose_duration, reset_control
         self.log('short_listen_start')
         self.quiet_players()
-        first = ['Input', 'A', 'B']
+        first = list(self.settings.player_order)
         previous = None
         for index in range(self.settings.short_count):
-            name = first[index] if index < 3 else self.rng.choice([n for n in first if n != previous])
+            if self.stop_replays(): break
+            name = first[index] if index < len(first) else self.rng.choice([n for n in first if n != previous])
             previous = name
             known = self.known_readings.get(name)
             duration = choose_duration(known.total, self.settings.short_min, self.settings.short_max, self.rng) if known and known.total else None
@@ -388,6 +527,9 @@ class Workflow:
                          start_confirm_delay=None if began is None else began-clicked,
                          click_to_all_idle_seconds=ended-clicked,
                          note='画面确认延迟，非真实音频延迟或精确音节长度')
+            except ReplayFinished:
+                self.quiet_players()
+                break
             except ControlChanged as exc:
                 self.log('short_listen_recheck', target=name, reason=str(exc))
                 self.quiet_players()
@@ -395,51 +537,245 @@ class Workflow:
         self.quiet_players()
         self.log('short_listen_end')
 
+    def stop_replays(self):
+        return False
+
+    def replay_count(self):
+        return self.rng.randint(self.settings.replay_min,self.settings.replay_max)
+
+    def replay_rounds(self):
+        count = self.replay_count()
+        self.log('replay_plan', count=count)
+        self.supplemental = True
+        try:
+            for i in range(count):
+                if self.stop_replays(): break
+                name = self.settings.player_order[0] if i == 0 else self.rng.choice(('A', 'B'))
+                pause = self.settings.after_b_pause if i == 0 else self.rng.uniform(self.settings.pause_min, self.settings.pause_max)
+                self.log('replay_wait', target=name, seconds=pause)
+                deadline = time.monotonic() + pause
+                while time.monotonic() < deadline:
+                    if self.stop_replays(): raise ReplayFinished()
+                    self.mouse.wait(min(.1, max(0, deadline-time.monotonic())))
+                if self.stop_replays(): break
+                self.status(f'额外重听 {i+1}/{count}：{name}')
+                self.log('replay_start', index=i+1, count=count, target=name)
+                self.click(name, fast=True)
+                # Finish any already-started autoplay; do not click pause on
+                # model completion or interrupt the recorded first round.
+                self.settle_and_follow(name)
+                self.log('replay_completed', index=i+1, target=name)
+        except ReplayFinished:
+            pass
+        finally:
+            self.supplemental = False
+
+    def on_first_round_complete(self):
+        pass
+
+    def on_players_ready(self):
+        """Prepare integrations only after the page and timers are verified."""
+        pass
+
+    def locate_first_round(self):
+        retries=2 if getattr(self,'automatic_recovery',False) else 0
+        for attempt in range(retries+1):
+            try:
+                image,readings=self.identify()
+                return self.confirm_initial_timers(image,readings)
+            except LocationUnconfirmed as exc:
+                self.log('location_retry',attempt=attempt+1,reason=str(exc),will_retry=attempt<retries)
+                if attempt==retries:raise
+                self.status(f'播放器尚未确认，重新读取画面并定位（{attempt+1}/{retries}），尚未点击播放。')
+                self.mouse.wait(.4)
+                self.mode_detected=False
+
+    def confirm_initial_timers(self,image,readings):
+        active=any(r.state=='active' for r in readings.values())
+        unreadable=[n for n,r in readings.items() if r.total is None and self.targets[n].state!='locked']
+        for attempt in range(3):
+            if not unreadable or active:break
+            self.status('首次计时未读全，正在重新采样：'+'/'.join(unreadable))
+            self.mouse.wait(.4)
+            image=self.snapshot();self.check_page(image)
+            readings=read_players(self.detector,image,self.targets)
+            self.known_readings.update({n:r for n,r in readings.items() if r.total is not None})
+            active=any(r.state=='active' for r in readings.values())
+            unreadable=[n for n in readings if self.known_readings.get(n,Reading('unknown')).total is None and self.targets[n].state!='locked']
+        if unreadable and not active:
+            raise LocationUnconfirmed('无法可靠读取 '+'/'.join(unreadable)+' 的计时，未点击；已尝试重新读取和定位。请放大向日葵中的计时文字。')
+        return image,readings
+
+    def capture_recovery_identity(self,image):
+        if not getattr(self,'automatic_recovery',False):return
+        from audio_lab.task_context import waveform_profiles
+        from rating_reader import question_marker
+        self.recovery_identity={
+            'waveforms':waveform_profiles(image,self.targets,self.settings.player_order),
+            'marker':question_marker(getattr(self.detector,'last_task_lines',[]))}
+
+    def verify_recovery_identity(self):
+        # Do not re-identify over the old reference: a new task must never
+        # inherit its progress or be clicked as part of this recovery.
+        import numpy as np
+        from audio_lab.task_context import waveform_profiles
+        from rating_reader import question_marker
+        image=self.snapshot();self.check_page(image)
+        proof=getattr(self,'recovery_identity',None)
+        if not proof:raise RuntimeError('缺少原题身份依据，未自动重播。')
+        targets,_,_=self.detector.detect(image)
+        from dataclasses import replace
+        if any(name not in targets or not stable_target(replace(old,state=targets[name].state),targets[name])
+               for name,old in self.targets.items()):
+            raise RuntimeError('恢复前播放器位置尚未确认，未自动重播。')
+        marker=question_marker(getattr(self.detector,'last_task_lines',[]))
+        if proof['marker'] and marker!=proof['marker']:
+            raise RuntimeError('恢复前题目编号变化或未读清，未自动重播。')
+        profiles=waveform_profiles(image,targets,self.settings.player_order)
+        for name,before in proof['waveforms'].items():
+            correlation=float(np.corrcoef(before,profiles[name])[0,1]) if np.std(before)>0 and np.std(profiles[name])>0 else float('nan')
+            if not np.isfinite(correlation) or correlation<.85:
+                raise RuntimeError(f'恢复前 {name} 音频波形未通过同题核对，未自动重播。')
+        self.log('recovery_identity_verified',marker=marker)
+
+    def on_first_round_retry(self,attempt,reason):
+        pass
+
+    def validate_first_round(self):
+        pass
+
+    def confirmed_first_round(self,readings):
+        retries=1 if getattr(self,'automatic_recovery',False) else 0
+        for attempt in range(retries+1):
+            try:
+                self.prepare_first_round(readings)
+                self.play_first_round(readings)
+                self.validate_first_round()
+                return
+            except PlaybackEvidenceError as exc:
+                self.log('first_round_retry',attempt=attempt+1,reason=str(exc),will_retry=attempt<retries)
+                if attempt==retries:
+                    self.status('首轮自动恢复次数已用完：'+str(exc))
+                    raise
+                self.status('首轮证据不完整，正在核对原题；确认后复位并从头完整重播一次。')
+                self.verify_recovery_identity()
+                self.quiet_players()
+                self.verify_recovery_identity()
+                self.on_first_round_retry(attempt+1,str(exc))
+                _,readings=self.observe_players()
+                self.prepare_first_round(readings,force=True)
+
+    def start_and_wait(self,name,expected):
+        retries=2 if getattr(self,'automatic_recovery',False) else 0
+        for attempt in range(retries+1):
+            self.click(name,fast=True)
+            self.pending_play_start=name
+            try:
+                return self.await_chain(expected)
+            except PlaybackDidNotStart as exc:
+                if attempt==retries:raise
+                # Always observe after waiting for manual input to settle.
+                # A delayed start is followed; it must never be toggled off.
+                _,fresh=self.observe_players()
+                if any(r.state=='active' for r in fresh.values()):
+                    self.pending_play_start=None
+                    return self.await_chain(expected,fresh)
+                if any(r.state not in ('idle','locked') for r in fresh.values()) or fresh[name].state!='idle' or fresh[name].current not in (0,fresh[name].total) or fresh[name].total is None:
+                    raise PlaybackEvidenceError('补点前未确认停止状态和起点，改为核对后完整重播。') from exc
+                self.log('play_start_retry',target=name,attempt=attempt+1,reason=str(exc))
+                self.status(f'{name} 未开始播放，状态已重新确认，补点播放（{attempt+1}/{retries}）。')
+            finally:self.pending_play_start=None
+
+    def prepare_first_round(self,readings,force=False):
+        # A prior pause can leave any player halfway through. Playback resumes
+        # that position; reset it before recording a fresh full round.
+        if any(r.state=='active' for r in readings.values()):return
+        from short_listen import reset_control
+        for name in self.settings.player_order:
+            reading=readings[name]
+            # An unreadable idle timer is not proof of zero. Resolve it before
+            # playing, rather than spending a full round on unusable evidence.
+            for attempt in range(2):
+                if reading.state!='idle' or reading.current is not None:break
+                self.parked(self.snapshot(),self.targets[name])
+                _,fresh=self.observe_players()
+                readings.update(fresh)
+                reading=readings[name]
+            if reading.state=='idle' and (reading.current is None or reading.total is None):
+                raise RuntimeError(f'{name} 开始前未读清起点和总时长，未开始首轮；请保持播放器可见。')
+            if reading.state!='idle' or reading.total is None or not (0<(reading.current or 0)<reading.total or force and reading.current!=0):continue
+            image=self.snapshot();self.check_page(image)
+            box=reset_control(image,self.targets[name])
+            if box is None:raise RuntimeError(f'{name} 停在中途但未看清重置图标，未开始首轮。')
+            self.preview_control(name,box,'idle',reset=True)
+            self.parked(image,self.targets[name])
+            deadline=time.monotonic()+3
+            confirmed=0
+            while time.monotonic()<deadline:
+                _,fresh=self.observe_players()
+                value=fresh[name]
+                confirmed=confirmed+1 if value.state=='idle' and value.current==0 else 0
+                if confirmed>=2:
+                    readings.update(fresh)
+                    self.log('first_round_reset',target=name,previous_current=reading.current)
+                    break
+                self.mouse.wait(.1)
+            else:raise RuntimeError(f'{name} 未确认回到开头，未开始首轮。')
+
+    def play_first_round(self, readings):
+        order=self.settings.player_order
+        active=[name for name,reading in readings.items() if reading.state=='active']
+        if active:
+            # Identification and recorder setup take time. Their original
+            # active player may already have ended or advanced to a successor.
+            # This partial playback is not first-round evidence: pause the
+            # currently observed controls, reset partial positions, then start
+            # a new complete round after recording is ready. Never relax the
+            # strict tracker for the fresh round or relabel old observations.
+            self.status('启动时页面已在播放，先暂停并复位，再从头完整播放本题。')
+            self.log('startup_playback_reset',readings={n:asdict(r) for n,r in readings.items()})
+            self.quiet_players()
+            _,readings=self.observe_players()
+            if any(r.state=='active' for r in readings.values()):
+                raise RuntimeError('启动时未确认原有播放已暂停，未开始首轮。')
+            self.prepare_first_round(readings)
+        if order==('A','B'):
+            # Do not assume this page autoplays B. Await A alone, then inspect
+            # whether B has started or needs a verified click after unlocking.
+            self.start_and_wait('A',('A',))
+            _, fresh=self.observe_players()
+            if fresh['B'].state=='active':
+                self.await_chain(('B',),fresh)
+            elif fresh['B'].current==fresh['B'].total and fresh['B'].total is not None:
+                # A very short B may have already finished between observations.
+                # Restart it rather than assuming it was captured completely.
+                self.start_and_wait('B',('B',))
+            else:
+                self.start_and_wait('B',('B',))
+            return
+        self.start_and_wait(order[0],order)
+
     def run(self):
         try:
-            self.status('连续流程开始：移动鼠标／切换窗口／Esc 会暂停。')
+            self.status('自动流程开始：录音和分析持续运行，鼠标点击等待焦点。' if getattr(self,'observation_only_playback',False)
+                        else '连续流程开始：移动鼠标／切换窗口／Esc 会暂停。')
             image = self.snapshot()
             self.parked(image)
-            image, readings = self.identify()
-            active = [name for name, reading in readings.items() if reading.state == 'active']
-            unreadable = [name for name, reading in readings.items() if reading.total is None and self.targets[name].state != 'locked']
-            for attempt in range(3):
-                if not unreadable or active: break
-                self.status('首次计时未读全，正在重新采样：'+'/'.join(unreadable))
-                self.mouse.wait(.4)
-                image = self.snapshot()
-                self.check_page(image)
-                readings = read_players(self.detector, image, self.targets)
-                self.known_readings.update({n:r for n,r in readings.items() if r.total is not None})
-                active = [n for n,r in readings.items() if r.state == 'active']
-                unreadable = [n for n in readings if self.known_readings.get(n, Reading('unknown')).total is None and self.targets[n].state != 'locked']
-            if unreadable and not active:
-                raise RuntimeError('无法可靠读取 '+ '/'.join(unreadable)+' 的当前时间/总时长，未点击。请放大向日葵窗口，让计时文字清晰后再开始。')
-            if active:
-                start = ('Input', 'A', 'B').index(active[0])
-                self.status(f'页面已在播放 {active[0]}，先观察剩余自动播放。')
-                self.await_chain(('Input', 'A', 'B')[start:], readings)
-                if start != 0:
-                    self.status('启动时未观察到 Input，补听完整一轮。')
-                    self.click('Input'); self.await_chain(('Input', 'A', 'B'))
-            else:
-                self.click('Input'); self.await_chain(('Input', 'A', 'B'))
+            image, readings = self.locate_first_round()
+            self.capture_recovery_identity(image)
+            self.on_players_ready()
+            # Recorder initialization may span an autoplay transition. Read
+            # the actual current frame instead of using identification-time
+            # readings to choose where the first recorded round should start.
+            _,readings=self.observe_players()
+            self.log('recording_start_readings',readings={n:asdict(r) for n,r in readings.items()})
+            self.confirmed_first_round(readings)
+            self.on_first_round_complete()
             if self.locked_start:
                 self.status('首轮播放完成，重新确认播放器已经解锁。')
                 self.identify()
                 if self.locked_start: raise RuntimeError('首轮完成后仍显示锁定，未重播。')
-            count = self.rng.randint(self.settings.replay_min, self.settings.replay_max)
-            self.log('replay_plan', count=count)
-            for i in range(count):
-                name = 'Input' if i == 0 else self.rng.choice(('A', 'B'))
-                pause = self.settings.after_b_pause if i == 0 else self.rng.uniform(self.settings.pause_min, self.settings.pause_max)
-                self.status(f'已确认播放结束，{pause:.1f} 秒后重听 {name}（{i+1}/{count}）。')
-                self.log('replay_wait', target=name, seconds=pause)
-                self.mouse.wait(pause)
-                self.status(f'额外重听 {i+1}/{count}：{name}')
-                self.log('replay_start', index=i+1, count=count, target=name)
-                self.click(name, fast=True); self.settle_and_follow(name)
-                self.log('replay_completed', index=i+1, target=name)
+            self.replay_rounds()
             if self.settings.short_enabled:
                 self.opening_previews()
             if self.settings.scroll_after:

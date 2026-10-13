@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "status": "user_defined_rubric_requires_calibration",
+  "quality": {
+    "principle": "Evaluate audible defects, not small differences in predicted MOS.",
+    "both_good": "Both clips have no material audible defect; low model scores alone do not imply bad audio.",
+    "defects": ["audible clipping or distortion", "dropouts", "abnormally prolonged sounds", "unexpected long silence inside speech", "intrusive noise"],
+    "guard": "Silence and clipping statistics are diagnostic flags, not proof; account for intended pauses and remote transmission artifacts.",
+    "unknown": "Absence of detected defects is insufficient when recording or detection is unreliable."
+  },
+  "speaker_similarity": "Compare each response with Input; do not compare transcript identity.",
+  "pronunciation": "Compare with page target text and instructions. Confirm omissions, additions and mispronunciations with audio; ASR is supporting evidence only.",
+  "naturalness": "Evaluate fluency, phrasing, stress, intonation, rhythm and unnatural word-by-word delivery. Naturalness MOS is supporting evidence, not a text-aware prosody judge.",
+  "overall_preference": {
+    "principle": "Choose according to the most consequential supported differences, without averaging incompatible raw model scores.",
+    "severe_defects": ["unintelligible or severely broken audio", "materially wrong or missing content", "major mismatch to reference speaker", "strongly robotic delivery"],
+    "normal_case": "When both are usable, compare similarity, pronunciation and naturalness; honor current page instructions.",
+    "dominant_factor": "Record the dimension that actually drove the preference; it is not automatically the largest raw numerical gap.",
+    "conflict": "Conflicting major defects or weak evidence require human review; no universal priority or weights yet."
+  }
+}

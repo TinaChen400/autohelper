@@ -25,12 +25,35 @@ class VisionTests(unittest.TestCase):
             self.assertEqual(targets['A'].button, buttons[0][0])
             self.assertEqual(targets['B'].button, buttons[1][0])
 
+    def test_lock_icon_digit_is_admitted_only_inside_exact_prerequisite_heading(self):
+        self.assertEqual(label_name('Response B 8 Play Response A first'),'B')
+        self.assertEqual(label_name('A Response A 0 Play Inputs first'),'A')
+        self.assertEqual(label_name('Response B Play Response A tirst'),'B')
+        self.assertEqual(label_name('Response A Play Inputs tirst'),'A')
+        for text in ('2 Response A','3 Response B','2 Response B 8 Play Response A first',
+                     'Response B 8','Response B 8 Play Response B first',
+                     'Response B 8 Play Response A first 2'):
+            with self.subTest(text=text):self.assertIsNone(label_name(text))
+
     def test_ambiguous_and_low_confidence_targets_not_returned(self):
         lines = [line('Response A', 100, 100), line('Response B', 600, 100, .5)]
         buttons = [((80, 270, 32, 32), 'idle'), ((110, 290, 32, 32), 'idle'), ((580, 270, 32, 32), 'idle')]
         targets, issues = associate(lines, buttons, (1000, 1200, 3))
         self.assertFalse(targets)
         self.assertTrue(issues)
+
+    def test_prerequisite_word_ocr_tolerance_preserves_exact_player_identity(self):
+        from vision import prerequisite_name
+        for word in ('first','tirst','firsL','frst','fiirst'):
+            with self.subTest(word=word):
+                self.assertEqual(label_name('Response A Play Inputs '+word),'A')
+                self.assertEqual(label_name('B Response B 8 Play Response A '+word),'B')
+                self.assertEqual(prerequisite_name('Play Inputs '+word),'A')
+        for text in ('Response A Play Response A first','Response B Play Inputs first',
+                     '2 Response A Play Inputs first','Response A Play Inputs worst',
+                     'Response A Play Inputs ftrsl','Response A Play Inputs first 2',
+                     'The Response A Play Inputs first'):
+            with self.subTest(text=text):self.assertIsNone(label_name(text))
 
     def test_does_not_cross_intervening_header(self):
         lines = [line('Input speech', 100, 100), line('Response A', 100, 200)]

@@ -1,0 +1,1514 @@
+[
+  {
+    "audio_seconds": 3.709000000000742,
+    "label": "unknown",
+    "readings": {
+      "Input": {
+        "state": "unknown",
+        "current": 0,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 4.240000000001601,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 0,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 4.772000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 0,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 5.303000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 1,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 5.803000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 1,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 6.303000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 2,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 6.8180000000011205,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 2,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 7.303000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 3,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 7.772000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 3,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 8.2400000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 4,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 8.7400000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 4,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 9.2400000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 5,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 9.772000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 5,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 10.350000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 6,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 10.8650000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 6,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 11.381000000001222,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 7,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 11.881000000001222,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 7,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 12.381000000001222,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 8,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 12.897000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 8,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 13.412000000000262,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 9,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 13.975000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 9,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 14.522000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 10,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 15.053000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 11,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 15.56800000000112,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 11,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 16.084000000000742,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 12,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 16.56800000000112,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 12,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 17.06800000000112,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 13,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 17.584000000000742,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 13,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 18.100000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 14,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 18.6150000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 14,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 19.147000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 15,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 19.69300000000112,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 15,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 20.225000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 16,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 20.709000000000742,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 16,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 21.19300000000112,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 17,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 21.678000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 17,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 22.162000000000262,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 18,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 22.631000000001222,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 18,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 23.100000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 19,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 23.56800000000112,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 19,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 24.053000000001703,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 20,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 24.584000000000742,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 20,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 25.084000000000742,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 21,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 25.584000000000742,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 21,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 26.100000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 22,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 26.6150000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 22,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 27.131000000001222,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": null,
+        "total": null
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 28.350000000000364,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 24,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 28.8650000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 24,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 29.381000000001222,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 29.647000000000844,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 29.9900000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 30.2400000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 30.4900000000016,
+    "label": "Input",
+    "readings": {
+      "Input": {
+        "state": "active",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 30.756000000001222,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 31.006000000001222,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 31.256000000001222,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 31.584000000000742,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 31.834000000000742,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 32.08400000000074,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 32.33400000000074,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 32.58400000000074,
+    "label": "A",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "active",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 32.83400000000074,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 33.08400000000074,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 33.350000000000364,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 33.6150000000016,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 0,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 33.9280000000017,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 34.20900000000074,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 34.475000000000364,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 34.75600000000122,
+    "label": "B",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "active",
+        "current": 1,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 35.03700000000026,
+    "label": "idle",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      }
+    }
+  },
+  {
+    "audio_seconds": 35.5530000000017,
+    "label": "idle",
+    "readings": {
+      "Input": {
+        "state": "idle",
+        "current": 26,
+        "total": 26
+      },
+      "A": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      },
+      "B": {
+        "state": "idle",
+        "current": 2,
+        "total": 2
+      }
+    }
+  }
+]

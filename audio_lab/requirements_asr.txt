@@ -1,0 +1,6 @@
+# Default integrated ASR: direct WAV -> PyTorch Whisper; no PyAV/CTranslate2.
+-r requirements.txt
+scipy>=1.10,<2
+torch>=2.5,<3
+transformers==5.19.0
+safetensors>=0.4,<1

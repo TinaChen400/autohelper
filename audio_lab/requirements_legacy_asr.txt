@@ -1,0 +1,3 @@
+# Optional historical analyze.py / video benchmarks, separate from integrated ASR.
+-r requirements.txt
+faster-whisper>=1.1,<2

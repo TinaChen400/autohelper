@@ -48,6 +48,22 @@ class RemoteRegressionTests(unittest.TestCase):
         self.assertEqual(targets['A'].state, 'locked')
         self.assertEqual(targets['B'].state, 'locked')
 
+    def test_lock_icon_read_as_digit_does_not_hide_b_on_new_question(self):
+        image=self.fixture('locked_header_digit.png')
+        targets,issues,_=self.detector.detect(image)
+        self.assertEqual(set(targets),{'Input','A','B'},issues)
+        self.assertEqual(targets['Input'].state,'idle')
+        self.assertEqual(targets['A'].state,'locked')
+        self.assertEqual(targets['B'].state,'locked')
+
+    def test_prerequisite_first_read_as_tirst_preserves_locked_b(self):
+        image=self.fixture('locked_header_tirst.png')
+        targets,issues,_=self.detector.detect(image)
+        self.assertEqual(set(targets),{'Input','A','B'},issues)
+        self.assertEqual(targets['Input'].state,'idle')
+        self.assertEqual(targets['A'].state,'locked')
+        self.assertEqual(targets['B'].state,'locked')
+
     def test_reported_screenshot_input_recovered_but_pointer_obstruction_rejected(self):
         image = self.fixture('reported_remote.png')
         targets, issues, _ = self.detector.detect(image)
@@ -57,6 +73,14 @@ class RemoteRegressionTests(unittest.TestCase):
         # User's pointer covers A's icon. A screenshot cannot recover hidden pixels.
         self.assertNotIn('A', targets)
         self.assertNotEqual(glyph_state(image, (105, 335, 15, 15)), 'active')
+
+    def test_locked_a_prerequisite_firsl_is_located_on_new_question(self):
+        image=self.fixture('locked_header_firsl.png')
+        targets,issues,_=self.detector.detect(image)
+        self.assertEqual(set(targets),{'Input','A','B'},issues)
+        self.assertEqual(targets['Input'].state,'idle')
+        self.assertEqual(targets['A'].state,'locked')
+        self.assertEqual(targets['B'].state,'locked')
 
 
 if __name__ == '__main__':
